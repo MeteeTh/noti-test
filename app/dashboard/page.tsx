@@ -30,7 +30,7 @@ export default function Dashboard() {
     const [lastResult, setLastResult] = useState<{
         validSubscriptionsCount?: number;
         totalSubscriptions?: number;
-        results?: Array<{ status: string; [key: string]: unknown }>;
+        results?: Array<{ status: string;[key: string]: unknown }>;
     } | null>(null);
     const [notificationHistory, setNotificationHistory] = useState<NotificationHistory[]>([]);
     const [loading, setLoading] = useState(true);
@@ -69,7 +69,7 @@ export default function Dashboard() {
             });
             const result = await response.json();
             setLastResult(result);
-            
+
             // เพิ่มประวัติการส่ง
             const newHistory: NotificationHistory = {
                 id: Date.now().toString(),
@@ -80,12 +80,12 @@ export default function Dashboard() {
                 failCount: (result.results?.filter((r: { status: string }) => r.status === 'fail').length) || 0,
                 totalCount: result.totalSubscriptions || 0
             };
-            
+
             setNotificationHistory(prev => [newHistory, ...prev.slice(0, 9)]); // เก็บ 10 รายการล่าสุด
-            
+
             // รีเฟรช subscriptions หลังจากส่ง
             await loadSubscriptions();
-            
+
             // ล้างฟอร์ม
             setNotificationTitle('');
             setNotificationBody('');
@@ -119,7 +119,7 @@ export default function Dashboard() {
                     <h1 className="text-4xl font-bold text-gray-900 mb-2">Push Notification Dashboard</h1>
                     <p className="text-gray-700">จัดการและส่งการแจ้งเตือนแบบ Real-time</p>
                 </div>
-                
+
                 {/* สถิติ */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
@@ -133,7 +133,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
                         <div className="flex items-center">
                             <div className="p-3 bg-green-100 rounded-lg">
@@ -147,7 +147,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
                         <div className="flex items-center">
                             <div className="p-3 bg-yellow-100 rounded-lg">
@@ -159,7 +159,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
                         <div className="flex items-center">
                             <div className="p-3 bg-purple-100 rounded-lg">
@@ -189,7 +189,7 @@ export default function Dashboard() {
                                     type="text"
                                     value={notificationTitle}
                                     onChange={(e) => setNotificationTitle(e.target.value)}
-                                    className="placeholder:text-gray-400 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="placeholder:text-gray-400 text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="กรอกหัวข้อ notification"
                                 />
                             </div>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                                 <textarea
                                     value={notificationBody}
                                     onChange={(e) => setNotificationBody(e.target.value)}
-                                    className="placeholder:text-gray-400 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="placeholder:text-gray-400 text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     rows={4}
                                     placeholder="กรอกเนื้อหา notification"
                                 />
@@ -240,15 +240,15 @@ export default function Dashboard() {
                                 {subscriptions.map((sub, index) => (
                                     <div key={index} className="border border-gray-200 p-4 rounded-lg hover:bg-gray-50">
                                         <div className="flex justify-between items-start">
-                                                                                    <div className="flex-1">
-                                            <p className="font-medium text-sm text-gray-800">Device {index + 1}</p>
-                                            <p className="text-xs text-gray-600 break-all mt-1">
-                                                {sub.endpoint.substring(0, 50)}...
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                Auth: {sub.keys.auth.substring(0, 10)}...
-                                            </p>
-                                        </div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-sm text-gray-800">Device {index + 1}</p>
+                                                <p className="text-xs text-gray-600 break-all mt-1">
+                                                    {sub.endpoint.substring(0, 50)}...
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-2">
+                                                    Auth: {sub.keys.auth.substring(0, 10)}...
+                                                </p>
+                                            </div>
                                             <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
                                                 Active
                                             </span>
