@@ -27,7 +27,11 @@ export default function Dashboard() {
     const [notificationTitle, setNotificationTitle] = useState('');
     const [notificationBody, setNotificationBody] = useState('');
     const [sending, setSending] = useState(false);
-    const [lastResult, setLastResult] = useState<any>(null);
+    const [lastResult, setLastResult] = useState<{
+        validSubscriptionsCount?: number;
+        totalSubscriptions?: number;
+        results?: Array<{ status: string; [key: string]: unknown }>;
+    } | null>(null);
     const [notificationHistory, setNotificationHistory] = useState<NotificationHistory[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -73,7 +77,7 @@ export default function Dashboard() {
                 body: notificationBody,
                 sentAt: new Date(),
                 successCount: result.validSubscriptionsCount || 0,
-                failCount: (result.results?.filter((r: any) => r.status === 'fail').length) || 0,
+                failCount: (result.results?.filter((r: { status: string }) => r.status === 'fail').length) || 0,
                 totalCount: result.totalSubscriptions || 0
             };
             
