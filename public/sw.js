@@ -38,28 +38,56 @@ self.addEventListener('push', function (event) {
         body: data.body,
         icon: '/next.svg',
         badge: '/next.svg',
-        requireInteraction: true,
-        tag: 'notification-' + Date.now()
+        requireInteraction: false,
+        silent: false,
+        vibrate: [100, 50, 100],
+        priority: 'high',
+        actions: [
+            {
+                action: 'view',
+                title: 'ดู'
+            }
+        ],
     };
 
-    console.log('Showing notification:', data.title, options);
+    console.log('📱 Showing notification:', data.title, 'body:', data.body);
     
+    // แสดงการแจ้งเตือนทันทีโดยไม่รอ
     event.waitUntil(
         self.registration.showNotification(data.title, options)
             .then(() => {
-                console.log('Notification shown successfully!');
+                console.log('✅ Notification shown successfully');
+                
+                // ตั้งเวลาปิดการแจ้งเตือนอัตโนมัติหลังจาก 3 วินาที
+                setTimeout(() => {
+                    self.registration.getNotifications().then(notifications => {
+                        notifications.forEach(notification => {
+                            if (notification.body === data.body) {
+                                notification.close();
+                                console.log('🔄 Notification auto-closed after 3 seconds');
+                            }
+                        });
+                    });
+                }, 3000);
             })
             .catch((error) => {
-                console.error('Error showing notification:', error);
+                console.error('❌ Error showing notification:', error);
             })
     );
 });
 
 self.addEventListener('notificationclick', function (event) {
-    console.log('Notification clicked');
+    console.log('🖱️ Notification clicked:', event.notification.body, 'action:', event.action);
+    
+    // ปิดการแจ้งเตือนทันทีเมื่อคลิก
     event.notification.close();
     
+    // เปิดหน้า dashboard เมื่อคลิก
     event.waitUntil(
-        clients.openWindow('/')
+        clients.openWindow('/dashboard')
     );
+});
+
+self.addEventListener('notificationclose', function (event) {
+    console.log('🚪 Notification closed:', event.notification.body);
 });

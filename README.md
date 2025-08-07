@@ -1,302 +1,457 @@
-# 🔔 Push Notification System
+# Push Notification System
 
-ระบบ Push Notification ที่ใช้ Next.js, Service Worker และ Web Push API สำหรับส่งการแจ้งเตือนแบบ Real-time
+ระบบแจ้งเตือนแบบ Real-time ที่ใช้ Web Push API และ Service Worker เพื่อส่งการแจ้งเตือนไปยังผู้ใช้แม้ว่าเว็บไซต์จะไม่ได้เปิดอยู่
 
 ## 📋 สารบัญ
 
-- [คุณสมบัติ](#คุณสมบัติ)
-- [เทคโนโลยีที่ใช้](#เทคโนโลยีที่ใช้)
+- [ภาพรวมระบบ](#ภาพรวมระบบ)
+- [สถาปัตยกรรมระบบ](#สถาปัตยกรรมระบบ)
 - [การติดตั้ง](#การติดตั้ง)
-- [การใช้งาน](#การใช้งาน)
-- [หลักการทำงาน](#หลักการทำงาน)
-- [โครงสร้างโปรเจค](#โครงสร้างโปรเจค)
+- [การตั้งค่า](#การตั้งค่า)
+- [โครงสร้างไฟล์](#โครงสร้างไฟล์)
+- [การทำงานของระบบ](#การทำงานของระบบ)
 - [API Endpoints](#api-endpoints)
-- [การจัดการ Subscription](#การจัดการ-subscription)
+- [การใช้งาน](#การใช้งาน)
+- [ข้อจำกัด](#ข้อจำกัด)
 - [การแก้ไขปัญหา](#การแก้ไขปัญหา)
 
-## ✨ คุณสมบัติ
+## 🎯 ภาพรวมระบบ
 
-- ✅ ส่ง Push Notification แบบ Real-time
-- ✅ รองรับหลาย Browser (Chrome, Edge, Firefox)
-- ✅ Dashboard สำหรับจัดการและส่ง Notification
-- ✅ ระบบจัดการ Subscription อัตโนมัติ
-- ✅ ลบ Subscription ที่หมดอายุอัตโนมัติ
-- ✅ ดูประวัติการส่งและสถิติ
+ระบบนี้เป็น Web Application ที่ใช้ Next.js 13+ และ Web Push API เพื่อส่งการแจ้งเตือนแบบ Real-time ไปยังผู้ใช้ โดยมีคุณสมบัติหลัก:
 
-## 🛠️ เทคโนโลยีที่ใช้
+- **Real-time Notifications**: ส่งการแจ้งเตือนทันทีเมื่อมีข้อมูลใหม่
+- **Cross-platform**: ทำงานได้บนทุกอุปกรณ์และเบราว์เซอร์ที่รองรับ
+- **Offline Support**: ส่งการแจ้งเตือนได้แม้ว่าเว็บไซต์จะไม่ได้เปิดอยู่
+- **Dashboard Management**: จัดการและติดตามการแจ้งเตือนผ่าน Dashboard
+- **Subscription Management**: จัดการ subscriptions ของผู้ใช้อัตโนมัติ
 
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Push Service**: Web Push API, Firebase Cloud Messaging (FCM)
-- **Service Worker**: สำหรับจัดการ Push Events
-- **Package**: web-push, @types/web-push
+## 🏗️ สถาปัตยกรรมระบบ
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   Service       │
+│   (Next.js)     │◄──►│   (API Routes)  │◄──►│   Worker        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Browser       │    │   VAPID Keys    │    │   Push Service  │
+│   Notifications │    │   (Web Push)    │    │   (Browser)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### องค์ประกอบหลัก:
+
+1. **Frontend (Next.js)**: หน้าเว็บและ UI
+2. **Backend (API Routes)**: จัดการ subscriptions และส่งการแจ้งเตือน
+3. **Service Worker**: รับและแสดงการแจ้งเตือน
+4. **VAPID Keys**: สำหรับยืนยันตัวตนกับ Push Service
+5. **Push Service**: บริการของเบราว์เซอร์สำหรับส่งการแจ้งเตือน
 
 ## 🚀 การติดตั้ง
 
-### 1. Clone โปรเจค
+### เงื่อนไขเบื้องต้น
+
+- Node.js 18+ 
+- npm หรือ yarn
+- เบราว์เซอร์ที่รองรับ Service Worker และ Push API
+- HTTPS (จำเป็นสำหรับ Production)
+
+### ขั้นตอนการติดตั้ง
+
+1. **Clone โปรเจค**
 ```bash
 git clone <repository-url>
 cd pwa-noti
 ```
 
-### 2. ติดตั้ง Dependencies
+2. **ติดตั้ง Dependencies**
 ```bash
 npm install
 ```
 
-### 3. สร้าง VAPID Keys
+3. **สร้าง VAPID Keys**
 ```bash
 node generateVapidKeys.js
 ```
 
-### 4. ตั้งค่า Environment Variables
+4. **ตั้งค่า Environment Variables**
 สร้างไฟล์ `.env.local`:
 ```env
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key_here
 VAPID_PRIVATE_KEY=your_private_key_here
-VAPID_EMAIL=your_email@example.com
 ```
 
-### 5. รันโปรเจค
+5. **รัน Development Server**
 ```bash
 npm run dev
 ```
 
-เปิดเว็บไซต์ที่: `http://localhost:3000`
+## ⚙️ การตั้งค่า
 
-## 📖 การใช้งาน
+### VAPID Keys
 
-### 1. หน้าแรก (Home)
-- เปิดเว็บไซต์และอนุญาต Notification
-- ระบบจะลงทะเบียน Service Worker และสร้าง Subscription อัตโนมัติ
+VAPID (Voluntary Application Server Identification) Keys ใช้สำหรับยืนยันตัวตนกับ Push Service
 
-### 2. Dashboard (`/dashboard`)
-- ดูจำนวน Active Subscriptions
-- ส่ง Notification ผ่าน UI
-- ดูผลลัพธ์การส่งล่าสุด
-- จัดการ Subscriptions
+```javascript
+// generateVapidKeys.js
+const webpush = require('web-push');
 
-### 3. API Testing
-ใช้ Postman หรือ curl:
-```bash
-# ส่ง Notification
-curl -X POST http://localhost:3000/api/send-notification \
-  -H "Content-Type: application/json" \
-  -d '{"title":"ทดสอบ","body":"นี่คือข้อความทดสอบ"}'
-
-# ดู Subscriptions
-curl http://localhost:3000/api/save-subscription
+const vapidKeys = webpush.generateVAPIDKeys();
+console.log('Public Key:', vapidKeys.publicKey);
+console.log('Private Key:', vapidKeys.privateKey);
 ```
 
-## 🔄 หลักการทำงาน
+### Service Worker Registration
 
-### 1. การลงทะเบียน (Registration)
-```
-Browser → Service Worker → Push Manager → Subscription → Backend
-```
+Service Worker จะถูกลงทะเบียนอัตโนมัติเมื่อเข้าหน้าเว็บ:
 
-1. **ลงทะเบียน Service Worker**: `navigator.serviceWorker.register('/sw.js')`
-2. **ขอสิทธิ์ Notification**: `Notification.requestPermission()`
-3. **สร้าง Push Subscription**: `pushManager.subscribe()`
-4. **ส่งไป Backend**: POST `/api/save-subscription`
-
-### 2. การส่ง Notification
-```
-Backend → Web Push → FCM → Browser → Service Worker → Notification
+```javascript
+// components/PushManager.tsx
+const registration = await navigator.serviceWorker.register('/sw.js');
 ```
 
-1. **Backend ส่ง**: `webpush.sendNotification(subscription, payload)`
-2. **FCM รับและส่งต่อ**: Firebase Cloud Messaging
-3. **Browser รับ**: Service Worker รับ push event
-4. **แสดง Notification**: `registration.showNotification()`
-
-### 3. การจัดการ Subscription
-- **ตรวจสอบ**: ทุกครั้งที่ส่ง notification
-- **ลบอัตโนมัติ**: subscription ที่หมดอายุ (status 410)
-- **เก็บสถิติ**: จำนวน success/fail
-
-## 📁 โครงสร้างโปรเจค
+## 📁 โครงสร้างไฟล์
 
 ```
 pwa-noti/
-├── app/
-│   ├── api/
-│   │   ├── save-subscription/
-│   │   │   └── route.ts          # เก็บและดู subscriptions
-│   │   └── send-notification/
-│   │       └── route.ts          # ส่ง notifications
-│   ├── dashboard/
-│   │   └── page.tsx              # Dashboard UI
-│   ├── layout.tsx
-│   └── page.tsx                  # หน้าแรก
-├── components/
-│   └── PushManager.tsx           # จัดการ Push Registration
-├── public/
-│   └── sw.js                     # Service Worker
-├── generateVapidKeys.js          # สร้าง VAPID Keys
-└── package.json
+├── app/                          # Next.js 13+ App Router
+│   ├── admin/                    # หน้า Admin (ถ้ามี)
+│   ├── api/                      # API Routes
+│   │   ├── save-subscription/    # จัดการ subscriptions
+│   │   └── send-notification/    # ส่งการแจ้งเตือน
+│   ├── dashboard/                # หน้า Dashboard
+│   │   └── page.tsx             # หน้าจัดการการแจ้งเตือน
+│   ├── favicon.ico              # ไอคอนเว็บไซต์
+│   ├── globals.css              # Global CSS
+│   ├── layout.tsx               # Root Layout
+│   ├── lib/                     # Utility Functions
+│   │   └── subscriptions.ts     # จัดการ subscriptions
+│   └── page.tsx                 # หน้าแรก
+├── components/                   # React Components
+│   └── PushManager.tsx          # จัดการ Push Notifications
+├── public/                      # Static Files
+│   ├── sw.js                    # Service Worker
+│   └── *.svg                    # Icons
+├── generateVapidKeys.js         # สร้าง VAPID Keys
+├── key.txt                      # เก็บ VAPID Keys
+├── next.config.ts               # Next.js Configuration
+├── package.json                 # Dependencies
+└── README.md                    # เอกสารนี้
 ```
+
+## 🔄 การทำงานของระบบ
+
+### 1. การลงทะเบียน Service Worker
+
+```javascript
+// components/PushManager.tsx
+useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        registerServiceWorkerAndSubscribe();
+    }
+}, []);
+```
+
+**ขั้นตอน:**
+1. ตรวจสอบว่าเบราว์เซอร์รองรับ Service Worker และ Push API
+2. ลงทะเบียน Service Worker (`/sw.js`)
+3. ขอสิทธิ์การแจ้งเตือนจากผู้ใช้
+4. สร้าง Push Subscription
+5. ส่ง subscription ไปยัง backend
+
+### 2. การจัดการ Subscriptions
+
+```javascript
+// app/lib/subscriptions.ts
+export const addSubscription = (subscription: PushSubscription) => {
+    const exists = subscriptions.findIndex(sub => sub.endpoint === subscription.endpoint) !== -1;
+    if (!exists) {
+        subscriptions.push(subscription);
+    }
+};
+```
+
+**ฟังก์ชัน:**
+- `addSubscription()`: เพิ่ม subscription ใหม่
+- `getSubscriptions()`: ดึงรายการ subscriptions ทั้งหมด
+- `removeSubscription()`: ลบ subscription ตาม endpoint
+- `clearSubscriptions()`: ลบ subscriptions ทั้งหมด
+
+### 3. การส่งการแจ้งเตือน
+
+```javascript
+// app/api/send-notification/route.ts
+export async function POST(request: NextRequest) {
+    const { title, body } = await request.json();
+    const subscriptions = getSubscriptions();
+    
+    const results = await Promise.allSettled(
+        subscriptions.map(subscription =>
+            webpush.sendNotification(subscription, JSON.stringify({ title, body }))
+        )
+    );
+}
+```
+
+**ขั้นตอน:**
+1. รับข้อมูลการแจ้งเตือน (title, body)
+2. ดึงรายการ subscriptions ทั้งหมด
+3. ส่งการแจ้งเตือนไปยังทุก subscription
+4. ติดตามผลลัพธ์การส่ง
+
+### 4. การแสดงการแจ้งเตือน
+
+```javascript
+// public/sw.js
+self.addEventListener('push', function (event) {
+    const data = event.data.json();
+    const options = {
+        body: data.body,
+        icon: '/next.svg',
+        requireInteraction: false,
+        silent: false,
+        vibrate: [100, 50, 100],
+        priority: 'high'
+    };
+    
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+```
+
+**ขั้นตอน:**
+1. รับ push event จาก Push Service
+2. Parse ข้อมูลการแจ้งเตือน
+3. แสดงการแจ้งเตือนด้วย `showNotification()`
+4. ตั้งเวลาปิดอัตโนมัติ
 
 ## 🔌 API Endpoints
 
-### POST `/api/save-subscription`
-**เก็บ Push Subscription**
-```typescript
-// Request
+### POST /api/save-subscription
+
+**หน้าที่:** บันทึก subscription ของผู้ใช้
+
+**Request Body:**
+```json
 {
-  "endpoint": "https://fcm.googleapis.com/...",
-  "keys": {
-    "p256dh": "...",
-    "auth": "..."
-  }
+    "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+    "keys": {
+        "p256dh": "...",
+        "auth": "..."
+    }
 }
+```
 
-// Response
+**Response:**
+```json
 {
-  "message": "Subscription saved."
+    "message": "Subscription saved.",
+    "totalSubscriptions": 1
 }
 ```
 
-### GET `/api/save-subscription`
-**ดู Subscriptions ทั้งหมด**
-```typescript
-// Response
+### GET /api/save-subscription
+
+**หน้าที่:** ดึงรายการ subscriptions ทั้งหมด
+
+**Response:**
+```json
 {
-  "subscriptions": [...],
-  "count": 2
+    "subscriptions": [...],
+    "count": 1,
+    "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
-### POST `/api/send-notification`
-**ส่ง Notification**
-```typescript
-// Request
+### DELETE /api/save-subscription
+
+**หน้าที่:** ลบ subscriptions ทั้งหมด (สำหรับการทดสอบ)
+
+**Response:**
+```json
 {
-  "title": "หัวข้อ",
-  "body": "เนื้อหา"
+    "message": "All subscriptions cleared.",
+    "previousCount": 1
 }
+```
 
-// Response
+### POST /api/send-notification
+
+**หน้าที่:** ส่งการแจ้งเตือนไปยังผู้ใช้ทั้งหมด
+
+**Request Body:**
+```json
 {
-  "message": "Notifications sent",
-  "results": [...],
-  "validSubscriptionsCount": 1,
-  "totalSubscriptions": 1
+    "title": "หัวข้อการแจ้งเตือน",
+    "body": "เนื้อหาการแจ้งเตือน"
 }
 ```
 
-## 🔧 การจัดการ Subscription
-
-### การเก็บข้อมูล
-```typescript
-// Development (Memory)
-let subscriptions: PushSubscription[] = [];
-
-// Production (Database)
-interface Subscription {
-  id: string;
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-  userId?: string;
-  createdAt: Date;
-  lastUsed: Date;
+**Response:**
+```json
+{
+    "validSubscriptionsCount": 1,
+    "totalSubscriptions": 1,
+    "results": [...]
 }
 ```
 
-### การตรวจสอบและลบ
-```typescript
-// ตรวจสอบ subscription ที่หมดอายุ
-if (error.statusCode === 410) {
-  // ลบออกจาก database
-  await removeSubscription(subscription.id);
-}
-```
+## 💻 การใช้งาน
 
-## 🐛 การแก้ไขปัญหา
+### สำหรับผู้ใช้ทั่วไป
 
-### 1. Notification ไม่แสดง
-- ตรวจสอบ Browser Permission
-- ตรวจสอบ Service Worker Status
-- ดู Console Logs
+1. **เปิดเว็บไซต์** - เข้าไปที่หน้าแรก
+2. **อนุญาตการแจ้งเตือน** - เมื่อเบราว์เซอร์ถาม ให้กด "อนุญาต"
+3. **รับการแจ้งเตือน** - ระบบจะส่งการแจ้งเตือนเมื่อมีข้อมูลใหม่
 
-### 2. Subscription หมดอายุ
-- ล้าง Browser Data
-- ลงทะเบียนใหม่
-- ตรวจสอบ VAPID Keys
+### สำหรับผู้ดูแลระบบ
 
-### 3. API Error
-- ตรวจสอบ VAPID Keys
-- ตรวจสอบ Network Connection
-- ดู Server Logs
+1. **เข้าหน้า Dashboard** - ไปที่ `/dashboard`
+2. **ดูสถานะ** - ตรวจสอบจำนวน subscriptions และสถานะการทำงาน
+3. **ส่งการแจ้งเตือน** - กรอกหัวข้อและเนื้อหา แล้วกดส่ง
+4. **ติดตามผล** - ดูประวัติการส่งและผลลัพธ์
 
-### 4. Service Worker ไม่ทำงาน
-```bash
-# Hard Refresh
-Ctrl + Shift + R
+### การส่งการแจ้งเตือนแบบ Programmatic
 
-# หรือ Unregister ใน DevTools
-F12 → Application → Service Workers → Unregister
-```
-
-## 🔒 ความปลอดภัย
-
-### VAPID Keys
-- **Public Key**: ใช้ใน Frontend (ปลอดภัย)
-- **Private Key**: ใช้ใน Backend (เก็บเป็นความลับ)
-
-### HTTPS
-- **Development**: HTTP (localhost)
-- **Production**: ต้องใช้ HTTPS
-
-### Permission
-- ผู้ใช้ต้องอนุญาต Notification
-- สามารถยกเลิกได้ใน Browser Settings
-
-## 📊 การ Monitor และ Logs
-
-### Console Logs
 ```javascript
-// Service Worker
-console.log('Push event received!');
-console.log('Notification shown successfully!');
+// ส่งการแจ้งเตือนผ่าน API
+const response = await fetch('/api/send-notification', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        title: 'หัวข้อ',
+        body: 'เนื้อหา'
+    })
+});
 
-// Backend
-console.log('Sending notifications to', count, 'subscriptions');
-console.log('Successfully sent to:', endpoint);
+const result = await response.json();
+console.log('ผลลัพธ์:', result);
 ```
 
-### Dashboard Metrics
-- จำนวน Active Subscriptions
-- ผลลัพธ์การส่งล่าสุด
-- สถานะระบบ
+## ⚠️ ข้อจำกัด
 
-## 🚀 การ Deploy
+### ข้อจำกัดทางเทคนิค
 
-### Vercel
-```bash
-npm run build
-vercel --prod
+1. **HTTPS Required**: ต้องใช้ HTTPS ใน Production
+2. **Browser Support**: ต้องใช้เบราว์เซอร์ที่รองรับ Service Worker และ Push API
+3. **User Permission**: ผู้ใช้ต้องอนุญาตการแจ้งเตือน
+4. **Notification Limits**: ระบบปฏิบัติการจำกัดจำนวนการแจ้งเตือนที่แสดงพร้อมกัน
+
+### ข้อจำกัดของระบบ
+
+1. **In-Memory Storage**: Subscriptions เก็บใน memory (หายเมื่อ restart server)
+2. **No Database**: ไม่มีฐานข้อมูลสำหรับเก็บข้อมูลถาวร
+3. **Single Server**: ไม่รองรับ multiple servers
+4. **No Authentication**: ไม่มีระบบยืนยันตัวตน
+
+### ข้อจำกัดของการแจ้งเตือน
+
+1. **Stacking**: การแจ้งเตือนอาจไม่ซ้อนกันได้ตามที่ต้องการ
+2. **Auto-close**: การแจ้งเตือนหายไปอัตโนมัติหลังจาก 3 วินาที
+3. **Platform Differences**: การแสดงผลแตกต่างกันในแต่ละระบบปฏิบัติการ
+
+## 🔧 การแก้ไขปัญหา
+
+### ปัญหาที่พบบ่อย
+
+#### 1. การแจ้งเตือนไม่ทำงาน
+
+**สาเหตุ:** ไม่ได้อนุญาตการแจ้งเตือน
+**วิธีแก้:**
+- ตรวจสอบการตั้งค่าการแจ้งเตือนในเบราว์เซอร์
+- ลองรีเซ็ทการตั้งค่าและอนุญาตใหม่
+
+#### 2. Service Worker ไม่ลงทะเบียน
+
+**สาเหตุ:** ไม่รองรับ Service Worker
+**วิธีแก้:**
+- ใช้เบราว์เซอร์ที่รองรับ (Chrome, Firefox, Safari, Edge)
+- ตรวจสอบว่าใช้ HTTPS
+
+#### 3. VAPID Keys ไม่ถูกต้อง
+
+**สาเหตุ:** Keys ไม่ตรงกันหรือหมดอายุ
+**วิธีแก้:**
+- สร้าง VAPID Keys ใหม่
+- อัปเดต environment variables
+
+#### 4. การแจ้งเตือนไม่ซ้อนกัน
+
+**สาเหตุ:** ข้อจำกัดของระบบปฏิบัติการ
+**วิธีแก้:**
+- ปรับการตั้งค่าใน Service Worker
+- ลองใช้ tag เดียวกันหรือไม่ใช้ tag
+
+### การ Debug
+
+#### 1. ตรวจสอบ Console
+
+```javascript
+// เปิด Developer Tools และดู Console
+// ควรเห็น log ต่างๆ เช่น:
+// "Service Worker loading..."
+// "Push event received!"
+// "Notification shown successfully"
 ```
 
-### Environment Variables
-```env
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key
-VAPID_PRIVATE_KEY=your_private_key
-VAPID_EMAIL=your_email@example.com
+#### 2. ตรวจสอบ Network
+
+```javascript
+// ดู Network tab ใน Developer Tools
+// ตรวจสอบ API calls ไปยัง:
+// - /api/save-subscription
+// - /api/send-notification
 ```
 
-## 📝 License
+#### 3. ตรวจสอบ Application
 
-MIT License
+```javascript
+// ไปที่ Application tab ใน Developer Tools
+// ตรวจสอบ:
+// - Service Workers
+// - Storage (Local Storage, Session Storage)
+```
+
+## 🚀 การพัฒนาเพิ่มเติม
+
+### ฟีเจอร์ที่แนะนำ
+
+1. **Database Integration**: เพิ่มฐานข้อมูลสำหรับเก็บ subscriptions
+2. **User Authentication**: เพิ่มระบบยืนยันตัวตน
+3. **Notification Templates**: เพิ่มเทมเพลตการแจ้งเตือน
+4. **Analytics**: เพิ่มการติดตามสถิติการแจ้งเตือน
+5. **Scheduled Notifications**: เพิ่มการแจ้งเตือนตามเวลา
+
+### การปรับปรุงประสิทธิภาพ
+
+1. **Caching**: เพิ่มการ cache สำหรับ subscriptions
+2. **Batch Processing**: ส่งการแจ้งเตือนเป็นชุด
+3. **Error Handling**: ปรับปรุงการจัดการ error
+4. **Monitoring**: เพิ่มการติดตามสถานะระบบ
+
+## 📄 License
+
+MIT License - ดูรายละเอียดในไฟล์ LICENSE
 
 ## 🤝 Contributing
 
 1. Fork โปรเจค
-2. สร้าง Feature Branch
+2. สร้าง feature branch
 3. Commit การเปลี่ยนแปลง
-4. Push ไป Branch
+4. Push ไปยัง branch
 5. สร้าง Pull Request
+
+## 📞 Support
+
+หากมีปัญหาหรือคำถาม สามารถติดต่อได้ผ่าน:
+- GitHub Issues
+- Email: [your-email@example.com]
 
 ---
 
-**หมายเหตุ**: ระบบนี้เหมาะสำหรับการทดสอบและเรียนรู้ สำหรับ Production ควรใช้ Database และเพิ่มระบบ Authentication
+**หมายเหตุ:** ระบบนี้เป็นตัวอย่างสำหรับการเรียนรู้ Web Push API และ Service Worker การใช้งานจริงควรมีการปรับปรุงเพิ่มเติมตามความต้องการ
